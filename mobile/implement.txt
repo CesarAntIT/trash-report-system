@@ -1,0 +1,3 @@
+En este folder se debe de implementar la Interfaz de usuario móvil.
+La cual consumirá la API desarrollada en el Backend.
+Esta aplicación móvil está enfocada en los Ciudadanos o Usuarios comunes.

@@ -1,0 +1,2 @@
+En este folder deben de crear una API para que funcione nuestra aplicación,
+según las historias de usuario que se explican en JIRA

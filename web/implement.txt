@@ -1,0 +1,2 @@
+En este folder deberan de desarrollar el dashboard y aplicación web utilizada 
+para la administración. 
