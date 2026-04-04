@@ -17,6 +17,17 @@ class RequestUserSolicitudeApi {
 	static async CrearUsuario(request, response) {
 		try {
 			const NuevoUsuario = new Usuario(request.body)
+			const ExisteUsuario = await dbColleccion().findOne({
+				correo: NuevoUsuario.correo,
+			})
+
+			//Arreglo De Verificacion De Usuario Con Correo (No Puede Ser Repetido)
+			if (ExisteUsuario) {
+				return response.status(409).json({
+					success: false,
+					message: 'Este Correo Ha Sido Tomado Por Otra Persona ',
+				})
+			}
 			const resultado = await dbColleccion().insertOne(NuevoUsuario)
 			response.status(201).json({ success: true, id: resultado.insertedId })
 		} catch (error) {
