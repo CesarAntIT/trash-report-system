@@ -52,7 +52,7 @@ Una vez el servidor esté en ejecución, podrás consumir el endpoint disponible
 ### ➕ Crear usuario
 
 - **Método:** POST
-- **URL:** http://localhost:3000/api
+- **URL:** http://localhost:3000/users
 
 ---
 
