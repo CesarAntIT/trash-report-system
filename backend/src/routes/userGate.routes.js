@@ -6,6 +6,6 @@ const RequestUserSolicitudeApi = require('../controllers/users.controller.js')
 
 const router = Router()
 //Metodo Post Crear Usuario
-router.post('/', RequestUserSolicitudeApi.CrearUsuario)
+router.post('/users', RequestUserSolicitudeApi.CrearUsuario)
 
 module.exports = router
