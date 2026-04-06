@@ -1,11 +1,13 @@
 const { Router } = require('express')
 
-//Las Funciones Que Viene Del Controller Para Usar En El Router Y Se Ejecuten En cual quir Accion Http
-
 const RequestUserSolicitudeApi = require('../controllers/users.controller.js')
 
 const router = Router()
-//Metodo Post Crear Usuario
-router.post('/', RequestUserSolicitudeApi.CrearUsuario)
+
+// POST /api/users — Crear usuario (registro)
+router.post('/users', RequestUserSolicitudeApi.CrearUsuario)
+
+// POST /api/users/login — Iniciar sesión
+router.post('/users/login', RequestUserSolicitudeApi.Login)
 
 module.exports = router
