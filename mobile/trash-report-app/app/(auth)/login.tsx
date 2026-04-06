@@ -7,6 +7,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
   ScrollView,
   ActivityIndicator,
   Animated,
@@ -15,6 +16,7 @@ import {
 import { router } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 import { loginRequest, registerRequest } from '../../services/api';
+import MapPicker from '../../components/MapPicker';
 
 const { width } = Dimensions.get('window');
 const GREEN = '#3DBFA0';
@@ -36,11 +38,17 @@ export default function LoginScreen() {
   // Register state
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPwd, setRegConfirmPwd] = useState('');
   const [showRegPwd, setShowRegPwd] = useState(false);
+  const [showRegConfirm, setShowRegConfirm] = useState(false);
+  const [regAddress, setRegAddress] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [regNameErr, setRegNameErr] = useState('');
   const [regEmailErr, setRegEmailErr] = useState('');
   const [regPwdErr, setRegPwdErr] = useState('');
+  const [regConfirmErr, setRegConfirmErr] = useState('');
   const [regGeneralErr, setRegGeneralErr] = useState('');
   const [regLoading, setRegLoading] = useState(false);
 
@@ -80,12 +88,14 @@ export default function LoginScreen() {
   // ─── Register ────────────────────────────────────────────────────────────────
   function validateRegister() {
     let ok = true;
-    setRegNameErr(''); setRegEmailErr(''); setRegPwdErr(''); setRegGeneralErr('');
+    setRegNameErr(''); setRegEmailErr(''); setRegPwdErr(''); setRegConfirmErr(''); setRegGeneralErr('');
     if (!regName.trim()) { setRegNameErr('El nombre es requerido'); ok = false; }
     if (!regEmail.trim()) { setRegEmailErr('El correo es requerido'); ok = false; }
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())) { setRegEmailErr('Correo inválido'); ok = false; }
     if (!regPassword.trim()) { setRegPwdErr('La contraseña es requerida'); ok = false; }
     else if (regPassword.length < 6) { setRegPwdErr('Mínimo 6 caracteres'); ok = false; }
+    if (!regConfirmPwd.trim()) { setRegConfirmErr('Confirma tu contraseña'); ok = false; }
+    else if (regPassword !== regConfirmPwd) { setRegConfirmErr('Las contraseñas no coinciden'); ok = false; }
     return ok;
   }
 
@@ -93,7 +103,13 @@ export default function LoginScreen() {
     if (!validateRegister()) return;
     setRegLoading(true);
     try {
-      const data = await registerRequest(regName.trim(), regEmail.trim(), regPassword);
+      const data = await registerRequest(
+        regName.trim(),
+        regEmail.trim(),
+        regPassword,
+        regPhone.trim(),
+        regAddress ?? undefined,
+      );
       await signIn(data.token);
       router.replace('/(app)/map');
     } catch (e: any) {
@@ -230,6 +246,19 @@ export default function LoginScreen() {
               </View>
               {regEmailErr ? <Text style={styles.errText}>{regEmailErr}</Text> : null}
 
+              {/* Phone */}
+              <View style={styles.inputWrap}>
+                <Text style={styles.inputIcon}>📱</Text>
+                <TextInput
+                  style={styles.inputField}
+                  placeholder="Teléfono (opcional)"
+                  placeholderTextColor="#AAAAAA"
+                  keyboardType="phone-pad"
+                  value={regPhone}
+                  onChangeText={setRegPhone}
+                />
+              </View>
+
               {/* Password */}
               <View style={styles.inputWrap}>
                 <Text style={styles.inputIcon}>🔒</Text>
@@ -247,6 +276,41 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
               {regPwdErr ? <Text style={styles.errText}>{regPwdErr}</Text> : null}
+
+              {/* Confirm Password */}
+              <View style={styles.inputWrap}>
+                <Text style={styles.inputIcon}>🔒</Text>
+                <TextInput
+                  style={[styles.inputField, regConfirmErr ? styles.inputErr : null]}
+                  placeholder="Confirmar contraseña"
+                  placeholderTextColor="#AAAAAA"
+                  secureTextEntry={!showRegConfirm}
+                  autoCapitalize="none"
+                  value={regConfirmPwd}
+                  onChangeText={(t) => { setRegConfirmPwd(t); setRegConfirmErr(''); }}
+                />
+                <TouchableOpacity onPress={() => setShowRegConfirm(!showRegConfirm)}>
+                  <Text style={styles.eyeIcon}>{showRegConfirm ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              </View>
+              {regConfirmErr ? <Text style={styles.errText}>{regConfirmErr}</Text> : null}
+
+              {/* Address map picker */}
+              <TouchableOpacity style={styles.mapPickerBtn} onPress={() => setShowMapPicker(true)}>
+                <Text style={styles.mapPickerIcon}>🗺️</Text>
+                <Text style={styles.mapPickerText}>
+                  {regAddress
+                    ? `📍 ${regAddress.latitude.toFixed(5)}, ${regAddress.longitude.toFixed(5)}`
+                    : 'Seleccionar domicilio en el mapa (opcional)'}
+                </Text>
+              </TouchableOpacity>
+
+              <MapPicker
+                visible={showMapPicker}
+                initial={regAddress ?? undefined}
+                onConfirm={(coords) => setRegAddress(coords)}
+                onClose={() => setShowMapPicker(false)}
+              />
 
               {regGeneralErr ? (
                 <View style={styles.generalErrBox}>
@@ -291,10 +355,9 @@ const styles = StyleSheet.create({
 
   // ── Banner ──────────────────────────────────────────────────────────────────
   banner: {
-    flex: 1,
-    justifyContent: 'flex-end',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 16 : 48,
     paddingHorizontal: 32,
-    paddingBottom: 40,
+    paddingBottom: 32,
     overflow: 'hidden',
   },
   circle1: {
@@ -352,7 +415,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     paddingHorizontal: 28,
     paddingTop: 32,
-    maxHeight: '58%',
+    flex: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
@@ -439,6 +502,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: 1,
   },
+
+  // ── Map picker button ────────────────────────────────────────────────────────
+  mapPickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  mapPickerIcon: { fontSize: 16, marginRight: 10 },
+  mapPickerText: { flex: 1, fontSize: 13, color: '#065F46' },
 
   // ── Switch ───────────────────────────────────────────────────────────────────
   switchRow: {

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, Image, ActivityIndicator, Alert,
+  ScrollView, Image, ActivityIndicator, Alert, Platform, StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import * as FileSystem from 'expo-file-system';
 import { router } from 'expo-router';
 import { getToken, API_URL } from '../../services/api';
+import MapPicker from '../../components/MapPicker';
 
 const GREEN = '#3DBFA0';
 
@@ -26,6 +26,7 @@ export default function ReportScreen() {
   const [photos, setPhotos] = useState<{ uri: string; base64: string }[]>([]);
   const [fecha] = useState(formatDate(new Date()));
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // El botón se habilita solo si todos los campos están completos
@@ -157,11 +158,27 @@ export default function ReportScreen() {
 
         {/* Ubicación */}
         <Text style={styles.label}>Ubicación (Coordenadas) <Text style={styles.required}>*</Text></Text>
-        <TouchableOpacity style={styles.locationBtn} onPress={getMyLocation} disabled={loadingLocation}>
-          {loadingLocation
-            ? <ActivityIndicator size="small" color={GREEN} />
-            : <Text style={styles.locationBtnText}>📡 Usar mi ubicación actual</Text>}
-        </TouchableOpacity>
+
+        <View style={styles.locationBtns}>
+          <TouchableOpacity style={[styles.locationBtn, { flex: 1, marginRight: 8 }]} onPress={getMyLocation} disabled={loadingLocation}>
+            {loadingLocation
+              ? <ActivityIndicator size="small" color={GREEN} />
+              : <Text style={styles.locationBtnText}>📡 GPS</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.locationBtn, { flex: 1 }]} onPress={() => setShowMapPicker(true)}>
+            <Text style={styles.locationBtnText}>🗺️ Mapa</Text>
+          </TouchableOpacity>
+        </View>
+
+        <MapPicker
+          visible={showMapPicker}
+          initial={latitude && longitude ? { latitude: parseFloat(latitude), longitude: parseFloat(longitude) } : undefined}
+          onConfirm={(coords) => {
+            setLatitude(coords.latitude.toFixed(6));
+            setLongitude(coords.longitude.toFixed(6));
+          }}
+          onClose={() => setShowMapPicker(false)}
+        />
 
         <View style={styles.coordsRow}>
           <View style={[styles.inputWrap, { flex: 1, marginRight: 8 }]}>
@@ -264,7 +281,9 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 10 : 14,
+    paddingBottom: 14,
     borderBottomWidth: 1, borderBottomColor: '#F0F0F0',
   },
   backBtn: { width: 70 },
@@ -286,9 +305,10 @@ const styles = StyleSheet.create({
   input: { flex: 1, paddingVertical: 13, fontSize: 14, color: '#1F2937' },
 
   // Ubicación
+  locationBtns: { flexDirection: 'row', marginBottom: 10 },
   locationBtn: {
     backgroundColor: '#ECFDF5', borderRadius: 12, borderWidth: 1,
-    borderColor: '#A7F3D0', paddingVertical: 13, alignItems: 'center', marginBottom: 10,
+    borderColor: '#A7F3D0', paddingVertical: 13, alignItems: 'center',
   },
   locationBtnText: { color: GREEN, fontWeight: '600', fontSize: 14 },
   coordsRow: { flexDirection: 'row' },

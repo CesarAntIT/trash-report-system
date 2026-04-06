@@ -18,11 +18,17 @@ export async function loginRequest(email: string, password: string) {
   return data as { token: string; user: { id: string; email: string; name: string } };
 }
 
-export async function registerRequest(name: string, email: string, password: string) {
+export async function registerRequest(
+  name: string,
+  email: string,
+  password: string,
+  phone?: string,
+  address?: { latitude: number; longitude: number },
+) {
   const response = await fetch(`${API_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, phone, address }),
   });
 
   const data = await response.json();
@@ -40,4 +46,14 @@ export async function getToken(): Promise<string | null> {
 
 export async function removeToken() {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
+
+export async function cancelReport(id: string, token: string) {
+  const response = await fetch(`${API_URL}/reports/${id}/cancel`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Error al cancelar');
+  return data;
 }

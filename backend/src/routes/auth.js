@@ -69,7 +69,7 @@ router.post(
       return res.status(400).json({ message: errors.array()[0].msg });
     }
 
-    const { name, email, password } = req.body;
+    const { name, email, password, phone, address } = req.body;
 
     try {
       const existing = await User.findOne({ email: email.trim().toLowerCase() });
@@ -84,6 +84,8 @@ router.post(
         name: name.trim(),
         email: email.trim().toLowerCase(),
         password: hashedPassword,
+        phone: phone ? phone.trim() : '',
+        address: address || undefined,
       });
 
       await user.save();
