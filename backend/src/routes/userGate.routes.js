@@ -3,11 +3,8 @@ const { Router } = require('express')
 const RequestUserSolicitudeApi = require('../controllers/users.controller.js')
 
 const router = Router()
-
-// POST /api/users — Crear usuario (registro)
+//Metodo Post Crear Usuario
 router.post('/users', RequestUserSolicitudeApi.CrearUsuario)
-
-// POST /api/users/login — Iniciar sesión
-router.post('/users/login', RequestUserSolicitudeApi.Login)
-
+//Metodo Post Iniciar Session
+router.post('/login', RequestUserSolicitudeApi.IniciarSesion)
 module.exports = router
