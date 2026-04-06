@@ -17,6 +17,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  phone: {
+    type: String,
+    trim: true,
+    default: '',
+  },
+  address: {
+    latitude: { type: Number },
+    longitude: { type: Number },
+  },
   createdAt: {
     type: Date,
     default: Date.now,

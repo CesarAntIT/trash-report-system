@@ -198,12 +198,36 @@
 
         <div class="mb-4">
           <div class="input-wrap">
+            <span class="input-icon">📱</span>
+            <input id="reg-phone" type="tel" class="input-field" placeholder="Teléfono (opcional)" />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="input-wrap">
             <span class="input-icon">🔒</span>
             <input id="reg-password" type="password" class="input-field" placeholder="Contraseña (mín. 6 caracteres)"
               oninput="clearErr('reg-pwd-err', this)" />
             <button class="eye-btn" onclick="togglePwd('reg-password', this)">👁️</button>
           </div>
           <p id="reg-pwd-err" class="err-text">La contraseña es requerida</p>
+        </div>
+
+        <div class="mb-4">
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input id="reg-confirm-pwd" type="password" class="input-field" placeholder="Confirmar contraseña"
+              oninput="clearErr('reg-confirm-err', this)" />
+            <button class="eye-btn" onclick="togglePwd('reg-confirm-pwd', this)">👁️</button>
+          </div>
+          <p id="reg-confirm-err" class="err-text">Las contraseñas no coinciden</p>
+        </div>
+
+        <div class="mb-4">
+          <button type="button" id="reg-location-btn" onclick="getRegLocation()"
+            class="w-full py-3 rounded-xl border-2 border-dashed border-[#A7F3D0] bg-[#F0FDF4] text-[#065F46] font-semibold text-sm hover:bg-[#DCFCE7] transition-colors">
+            🗺️ <span id="reg-location-text">Seleccionar domicilio con ubicación actual (opcional)</span>
+          </button>
         </div>
 
         <div id="reg-general-err" class="general-err"></div>
@@ -299,10 +323,33 @@
       }
     }
 
+    let regAddress = null;
+
+    function getRegLocation() {
+      if (!navigator.geolocation) {
+        alert('Tu navegador no soporta geolocalización');
+        return;
+      }
+      document.getElementById('reg-location-text').textContent = 'Obteniendo ubicación...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          regAddress = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+          document.getElementById('reg-location-text').textContent =
+            `📍 ${regAddress.latitude.toFixed(5)}, ${regAddress.longitude.toFixed(5)}`;
+        },
+        () => {
+          document.getElementById('reg-location-text').textContent = 'Seleccionar domicilio con ubicación actual (opcional)';
+          alert('No se pudo obtener tu ubicación');
+        }
+      );
+    }
+
     async function handleRegister() {
       const name = document.getElementById('reg-name').value.trim();
       const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
       const password = document.getElementById('reg-password').value.trim();
+      const confirmPwd = document.getElementById('reg-confirm-pwd').value.trim();
       document.getElementById('reg-general-err').style.display = 'none';
 
       let ok = true;
@@ -311,14 +358,20 @@
       else if (!validateEmail(email)) { showErr('reg-email-err', 'Correo inválido'); ok = false; }
       if (!password) { showErr('reg-pwd-err', 'La contraseña es requerida'); ok = false; }
       else if (password.length < 6) { showErr('reg-pwd-err', 'Mínimo 6 caracteres'); ok = false; }
+      if (!confirmPwd) { showErr('reg-confirm-err', 'Confirma tu contraseña'); ok = false; }
+      else if (password !== confirmPwd) { showErr('reg-confirm-err', 'Las contraseñas no coinciden'); ok = false; }
       if (!ok) return;
 
       setLoading('reg', true);
       try {
+        const body = { name, email, password };
+        if (phone) body.phone = phone;
+        if (regAddress) body.address = regAddress;
+
         const res = await fetch(`${API_URL}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password }),
+          body: JSON.stringify(body),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message);
