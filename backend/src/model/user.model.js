@@ -32,7 +32,12 @@ class Usuario {
 		if (!apellido || typeof apellido !== 'string' || apellido.trim() === '') {
 			throw new Error('apellido es requerido y debe ser texto')
 		}
-		if (typeof numero_telefono !== 'string' || numero_telefono.length > 9) {
+
+		if (
+			!numero_telefono ||
+			typeof numero_telefono !== 'string' ||
+			numero_telefono.trim().length !== 9
+		) {
 			throw new Error('Numero De Telefono No Valido')
 		}
 		if (!correo || typeof correo !== 'string' || !correo.includes('@')) {
@@ -50,9 +55,7 @@ class Usuario {
 		this.nombre = nombre.trim()
 		this.apellido = apellido.trim()
 		this.numero_telefono =
-			typeof numero_telefono === 'string'
-				? numero_telefono
-				: ''.trim().length(9)
+			typeof numero_telefono === 'string' ? numero_telefono : ''.trim()
 		this.correo = correo.trim().toLowerCase()
 		this.contrasena = contrasena.trim()
 		this.isAdmin = false
