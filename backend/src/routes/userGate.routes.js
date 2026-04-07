@@ -9,9 +9,6 @@ const router = Router()
 router.post('/users', RequestUserSolicitudeApi.CrearUsuario)
 //Metodo Post Iniciar Session
 router.post('/login', RequestUserSolicitudeApi.IniciarSesion)
-<<<<<<< HEAD
 //Metodo Put Para Editar Usuario
 router.put('/:id', RequestUserSolicitudeApi.EditarUsuario)
-=======
->>>>>>> b0802d77853f9f221be7bd690b4590465b66c431
 module.exports = router
