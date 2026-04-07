@@ -185,6 +185,12 @@ class RequestUserSolicitudeApi {
 			const camposActualizar = {}
 
 			if (numero_telefono && numero_telefono.trim() !== '') {
+				if (numero_telefono.trim().length !== 9) {
+					return response.status(400).json({
+						success: false,
+						message: 'El número de teléfono debe tener exactamente 9 dígitos',
+					})
+				}
 				camposActualizar.numero_telefono = numero_telefono.trim()
 			}
 
