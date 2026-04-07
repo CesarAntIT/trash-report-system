@@ -1,12 +1,9 @@
 // Conexion Del La Base De Datos Creado (Solo usar) No Volver A Crear
 const { client } = require('../config/db.config.js')
 
-<<<<<<< HEAD
 //ObjectId Para Verificar Que Sea UN Id Valido De Mongo Clase Especial De Mongo
 const { ObjectId } = require('mongodb')
 
-=======
->>>>>>> b0802d77853f9f221be7bd690b4590465b66c431
 // Modelo Entidad De la Clase O Tipo Usuario Requerido
 const Usuario = require('../model/user.model.js')
 
@@ -107,7 +104,6 @@ class RequestUserSolicitudeApi {
 			response.status(500).json({ success: false, message: error.message })
 		}
 	}
-<<<<<<< HEAD
 
 	/**
 	 * @description Edita los datos de un usuario existente en la base de datos.
@@ -247,8 +243,6 @@ class RequestUserSolicitudeApi {
 			response.status(500).json({ success: false, message: error.message })
 		}
 	}
-=======
->>>>>>> b0802d77853f9f221be7bd690b4590465b66c431
 }
 
 module.exports = RequestUserSolicitudeApi
