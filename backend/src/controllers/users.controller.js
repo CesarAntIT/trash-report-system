@@ -67,6 +67,22 @@ class RequestUserSolicitudeApi {
 				})
 			}
 
+			const dominiosPermitidos = [
+				'gmail.com',
+				'hotmail.com',
+				'yahoo.com',
+				'outlook.com',
+			]
+			const dominio = correo.trim().toLowerCase().split('@')[1]
+
+			if (!dominiosPermitidos.includes(dominio)) {
+				return response.status(400).json({
+					success: false,
+					message:
+						'Solo se permiten correos de Gmail, Hotmail, Yahoo u Outlook',
+				})
+			}
+
 			if (!contrasena || contrasena.trim() === '') {
 				return response.status(400).json({
 					success: false,
@@ -194,13 +210,23 @@ class RequestUserSolicitudeApi {
 				camposActualizar.numero_telefono = numero_telefono.trim()
 			}
 
+			const dominiosPermitidos = [
+				'gmail.com',
+				'hotmail.com',
+				'yahoo.com',
+				'outlook.com',
+			]
+			const dominio = correo_electronico.trim().toLowerCase().split('@')[1]
+
 			if (correo_electronico && correo_electronico.trim() !== '') {
-				if (!correo_electronico.includes('@')) {
+				if (!dominiosPermitidos.includes(dominio)) {
 					return response.status(400).json({
 						success: false,
-						message: 'Debe Ser Un Correo Valido',
+						message:
+							'Solo se permiten correos de Gmail, Hotmail, Yahoo u Outlook',
 					})
 				}
+
 				// verificar que el nuevo correo no lo tenga otro usuario
 				const CorreoExiste = await dbColleccion().findOne({
 					correo: correo_electronico.trim().toLowerCase(),
