@@ -40,9 +40,24 @@ class Usuario {
 		) {
 			throw new Error('Numero De Telefono No Valido')
 		}
-		if (!correo || typeof correo !== 'string' || !correo.includes('@')) {
+		if (!correo || typeof correo !== 'string') {
 			throw new Error('correo electrónico inválido')
 		}
+
+		const dominiosPermitidos = [
+			'gmail.com',
+			'hotmail.com',
+			'yahoo.com',
+			'outlook.com',
+		]
+		const dominio = correo.trim().toLowerCase().split('@')[1]
+
+		if (!dominiosPermitidos.includes(dominio)) {
+			throw new Error(
+				'Solo se permiten correos de Gmail, Hotmail, Yahoo u Outlook'
+			)
+		}
+
 		if (
 			!contrasena ||
 			typeof contrasena !== 'string' ||

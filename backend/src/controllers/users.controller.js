@@ -195,6 +195,12 @@ class RequestUserSolicitudeApi {
 			}
 
 			if (correo_electronico && correo_electronico.trim() !== '') {
+				if (!correo_electronico.includes('@')) {
+					return response.status(400).json({
+						success: false,
+						message: 'Debe Ser Un Correo Valido',
+					})
+				}
 				// verificar que el nuevo correo no lo tenga otro usuario
 				const CorreoExiste = await dbColleccion().findOne({
 					correo: correo_electronico.trim().toLowerCase(),
