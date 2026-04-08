@@ -1,0 +1,46 @@
+const mongoose = require('mongoose');
+
+const reportSchema = new mongoose.Schema({
+  
+  estado: {
+    type: String,
+    enum: ['pendiente', 'en progreso', 'resuelto'], 
+    default: 'pendiente'
+  }
+});
+
+module.exports = mongoose.model('Report', reportSchema);
+
+const express = require('express');
+const router = express.Router();
+const Report = require('../models/Report'); 
+
+
+router.patch('/cambiar-estado/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nuevoEstado } = req.body;
+
+       
+        const reporteActualizado = await Report.findByIdAndUpdate(
+            id, 
+            { estado: nuevoEstado }, 
+            { new: true } 
+        );
+
+        if (!reporteActualizado) {
+            return res.status(404).json({ mensaje: "Reporte no encontrado" });
+        }
+
+        res.json({
+            mensaje: "Estado actualizado con éxito",
+            reporte: reporteActualizado
+        });
+
+    } catch (error) {
+        res.status(500).json({ mensaje: "Error al actualizar", error: error.message });
+    }
+});
+
+module.exports = router;
+
