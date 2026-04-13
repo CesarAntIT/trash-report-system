@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Report = require('../models/Report');
 const authMiddleware = require('../middleware/auth');
+const Notification = require('../models/Notifications.js');
 
 const router = express.Router();
 
@@ -37,6 +38,16 @@ router.post(
       });
 
       await report.save();
+
+      await Notification.create({
+        user: req.userId,
+        message: `Tu reporte en "${locationName}" ha sido enviado.`,
+      });
+
+      await Notification.create({
+        user: req.userId,
+        message: `Tu reporte en "${locationName}" ha sido guardado en el servidor.`,
+      });
 
       res.status(201).json({
         message: 'Reporte creado exitosamente',
@@ -88,6 +99,39 @@ router.patch('/:id/cancel', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// GET /api/reports?address=&startDate=&endDate=&status=
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const { address, startDate, endDate, status } = req.query;
+    const filter = {};
+
+    if (address) {
+      filter.locationName = { $regex: address, $options: 'i' };
+    }
+
+    if (status) {
+      filter.status = status;
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        const [d, m, y] = startDate.split('-');
+        filter.createdAt.$gte = new Date(`${y}-${m}-${d}`);
+      }
+      if (endDate) {
+        const [d, m, y] = endDate.split('-');
+        filter.createdAt.$lte = new Date(`${y}-${m}-${d}`);
+      }
+    }
+
+    const reports = await Report.find(filter).sort({ createdAt: -1 });
+    res.json(reports);
+  } catch (err) {
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
