@@ -182,3 +182,4 @@ mongoose
   .catch((err) => console.error('Error al conectar MongoDB:', err));
 
   app.use('/admin/reports', adminReportsRoutes);
+  app.use('/user-search', require('./src/routes/user-search'));
