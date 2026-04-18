@@ -15,86 +15,91 @@ function ReportDetail() {
       lng: -69.9312,
       images: [
         "https://picsum.photos/300",
-        "https://picsum.photos/301"
+        "https://picsum.photos/301",
+        "https://picsum.photos/302"
       ]
     };
 
     setReport(fakeReport);
   }, [id]);
 
-  if (!report) return <p>Cargando...</p>;
+  if (!report) return <p className="p-6">Cargando...</p>;
 
-  // 👇 ESTE return DEBE ESTAR DENTRO DE LA FUNCIÓN
   return (
-    <div style={{
-      fontFamily: "Arial, sans-serif",
-      background: "#f5f5f5",
-      minHeight: "100vh",
-      padding: "20px"
-    }}>
-      <div style={{
-        maxWidth: "900px",
-        margin: "0 auto",
-        background: "#fff",
-        borderRadius: "10px",
-        padding: "20px",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
-      }}>
-        <h2 style={{ marginBottom: "20px" }}>Detalle del Reporte</h2>
+    <div className="bg-gray-100 min-h-screen flex">
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "10px",
-          marginBottom: "20px"
-        }}>
-          <p><strong>ID:</strong> {report.id}</p>
-          <p><strong>Usuario:</strong> {report.userId}</p>
-          <p><strong>Fecha:</strong> {report.date}</p>
-          <p><strong>Dirección:</strong> {report.address}</p>
+      {/* ── SIDEBAR (igual al dashboard) ── */}
+      <aside className="w-60 bg-white border-r border-gray-100 flex flex-col min-h-screen shadow-sm fixed">
+        <div className="px-5 py-5 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🗑️</span>
+            <span className="text-lg font-bold text-gray-800">TrashReport</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">Detalle del reporte</p>
         </div>
 
-        <div style={{
-          height: "300px",
-          borderRadius: "10px",
-          overflow: "hidden",
-          marginBottom: "20px"
-        }}>
-          <iframe
-            width="100%"
-            height="100%"
-            style={{ border: "0" }}
-            src={`https://maps.google.com/maps?q=${report.lat},${report.lng}&z=15&output=embed`}
-          ></iframe>
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          <a href="/dashboard" className="block px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+            🏠 Dashboard
+          </a>
+        </nav>
+      </aside>
+
+      {/* ── CONTENIDO ── */}
+      <main className="ml-60 flex-1 p-8">
+
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Detalle del Reporte</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Información completa del reporte seleccionado
+          </p>
         </div>
 
-        <h3 style={{ marginBottom: "10px" }}>Evidencias</h3>
+        {/* Card principal */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
 
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-          gap: "10px"
-        }}>
-          {report.images.map((img, i) => (
-            <div key={i} style={{
-              width: "100%",
-              height: "120px",
-              overflow: "hidden",
-              borderRadius: "8px"
-            }}>
-              <img
-                src={img}
-                alt="evidencia"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover"
-                }}
-              />
+          {/* Info */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <p><span className="font-semibold text-gray-700">ID:</span> {report.id}</p>
+            <p><span className="font-semibold text-gray-700">Usuario:</span> {report.userId}</p>
+            <p><span className="font-semibold text-gray-700">Fecha:</span> {report.date}</p>
+            <p><span className="font-semibold text-gray-700">Dirección:</span> {report.address}</p>
+          </div>
+
+          {/* Mapa */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Ubicación</h3>
+            <div className="h-72 rounded-xl overflow-hidden border">
+              <iframe
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                src={`https://maps.google.com/maps?q=${report.lat},${report.lng}&z=15&output=embed`}
+              ></iframe>
             </div>
-          ))}
+          </div>
+
+          {/* Evidencias */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Evidencias</h3>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {report.images.map((img, i) => (
+                <div key={i} className="w-full h-32 overflow-hidden rounded-lg">
+                  <img
+                    src={img}
+                    alt="evidencia"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
-      </div>
+
+      </main>
     </div>
   );
 }
