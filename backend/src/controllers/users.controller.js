@@ -365,6 +365,97 @@ class RequestUserSolicitudeApi {
 			response.status(500).json({ success: false, message: error.message })
 		}
 	}
+
+	/**
+ * @method GetInfoUsuario
+ * @description Obtiene la información de un usuario por su ID.
+ * Solo el propietario de la cuenta puede ver el campo `esPropietario: true`
+ * para que el frontend muestre el botón "Editar".
+ *
+ * @route   GET /usuarios/:id
+ * @access  Privado (requiere token JWT)
+ *
+ * @param {string} request.params.id        - ID del usuario a consultar (ObjectId de MongoDB)
+ * @param {string} request.userId            - ID del usuario autenticado (viene del middleware JWT)
+ *
+ * @returns {Object} JSON con la información del usuario
+ *
+ * @example
+ * // Request
+ * GET http://localhost:3000/api/usuarios/69d3f718a643a4ad930abfe7
+ * Headers: { Authorization: "Bearer <token>" }
+ *
+ * @example
+ * // Respuesta exitosa - 200
+ * {
+ *   "success": true,
+ *   "usuario": {
+ *     "id": "69d3f718a643a4ad930abfe7",
+ *     "nombre_completo": "Juan Pérez",
+ *     "numero_telefono": "849123456",
+ *     "correo_electronico": "juan@gmail.com",
+ *     "direccion_personal": "Calle Principal 123",
+ *     "ubicacion": {
+ *       "latitud": 18.4861,
+ *       "longitud": -69.9312
+ *     }
+ *   },
+ *   "esPropietario": true
+ * }
+ *
+ * @example
+ * // Respuesta error - 404
+ * { "success": false, "message": "Usuario no encontrado" }
+ */
+static async GetInfoUsuario(request, response) {
+    try {
+        const { id } = request.params
+
+        if (!ObjectId.isValid(id)) {
+            return response.status(400).json({
+                success: false,
+                message: 'ID de usuario inválido',
+            })
+        }
+
+        // Buscar el usuario en la base de datos
+        const usuario = await dbColleccion().findOne({
+            _id: new ObjectId(id),
+        })
+
+        // Si no existe el usuario
+        if (!usuario) {
+            return response.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado',
+            })
+        }
+
+        const esPropietario = request.userId.toString() === id.toString()
+
+        const direccion_personal = usuario.direccion && usuario.direccion.trim() !== ''
+            ? usuario.direccion
+            : 'Dirección no disponible'
+
+        response.status(200).json({
+            success: true,
+            usuario: {
+                id: usuario._id,
+                nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
+                numero_telefono: usuario.numero_telefono || 'No registrado',
+                correo_electronico: usuario.correo,
+                direccion_personal,
+                ubicacion: {
+                    latitud: usuario.latitud ?? null,
+                    longitud: usuario.longitud ?? null,
+                },
+            },
+            esPropietario,
+        })
+    } catch (error) {
+        response.status(500).json({ success: false, message: error.message })
+    }
+}
 }
 
 module.exports = RequestUserSolicitudeApi
