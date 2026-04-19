@@ -8,6 +8,7 @@ require('dotenv').config();
 const authRoutes = require('./src/routes/auth');
 const adminRoutes = require('./src/routes/admin');
 const reportRoutes = require('./src/routes/reports');
+const notificationRoutes = require('./src/routes/notifications');
 
 const app = express();
 
@@ -163,6 +164,7 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 3000;
 
