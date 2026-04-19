@@ -7,4 +7,9 @@ const router = Router()
 router.post('/users', RequestUserSolicitudeApi.CrearUsuario)
 //Metodo Post Iniciar Session
 router.post('/login', RequestUserSolicitudeApi.IniciarSesion)
+//Metodo Put Para Editar Usuario
+router.put('/:id', RequestUserSolicitudeApi.EditarUsuario)
+//Metodo Get Para Obtener La Informacion Del Usuario
+router.get('/:id', authMiddleware, RequestUserSolicitudeApi.GetInfoUsuario) 
+
 module.exports = router
