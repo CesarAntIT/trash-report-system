@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trash Report — Iniciar Sesión</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+
+    .green { background-color: #3DBFA0; }
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 13px 14px 13px 44px;
+      border-radius: 12px;
+      background: #F4F9F8;
+      border: 1.5px solid #E8F0EE;
+      font-size: 14px;
+      color: #333;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-field:focus { border-color: #3DBFA0; }
+    .input-field.error { border-color: #EF4444; }
+
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      pointer-events: none;
+    }
+    .eye-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 16px;
+      background: none;
+      border: none;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 30px;
+      background: #3DBFA0;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(61,191,160,0.4);
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .banner-btn {
+      border: 2px solid #fff;
+      border-radius: 30px;
+      padding: 11px 32px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+      background: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .banner-btn:hover { background: rgba(255,255,255,0.15); }
+
+    .err-text { color: #EF4444; font-size: 12px; margin-top: 4px; display: none; }
+    .general-err {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 10px;
+      padding: 12px;
+      color: #DC2626;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+      margin-bottom: 12px;
+    }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gray-100">
+
+  <div class="w-full max-w-4xl min-h-[520px] rounded-3xl shadow-2xl overflow-hidden flex">
+
+    <!-- ── Panel izquierdo verde ── -->
+    <div id="banner" class="green w-[42%] relative flex flex-col justify-center px-10 py-12 overflow-hidden">
+      <!-- Círculos decorativos -->
+      <div class="circle" style="width:280px;height:280px;top:-80px;right:-80px;"></div>
+      <div class="circle" style="width:180px;height:180px;bottom:-50px;left:-50px;"></div>
+      <div class="circle" style="width:100px;height:100px;top:50%;left:30px;opacity:0.05;"></div>
+
+      <div id="banner-login" class="panel active relative z-10">
+        <h2 class="text-4xl font-extrabold text-white leading-tight mb-4">¡Bienvenido<br>de vuelta!</h2>
+        <p class="text-white/80 text-sm leading-relaxed mb-8">Para seguir conectado inicia sesión<br>con tu cuenta personal</p>
+        <button class="banner-btn" onclick="switchTo('register')">CREAR CUENTA</button>
+      </div>
+
+      <div id="banner-register" class="panel relative z-10">
+        <h2 class="text-4xl font-extrabold text-white leading-tight mb-4">¡Hola,<br>bienvenido!</h2>
+        <p class="text-white/80 text-sm leading-relaxed mb-8">¿Ya tienes una cuenta?<br>Inicia sesión aquí</p>
+        <button class="banner-btn" onclick="switchTo('login')">INICIAR SESIÓN</button>
+      </div>
+    </div>
+
+    <!-- ── Panel derecho blanco ── -->
+    <div class="flex-1 bg-white flex flex-col justify-center px-12 py-12">
+
+      <!-- LOGIN -->
+      <div id="panel-login" class="panel active">
+        <h1 class="text-2xl font-bold text-gray-800 text-center mb-8">Iniciar Sesión</h1>
+
+        <div class="mb-5">
+          <div class="input-wrap">
+            <span class="input-icon">✉️</span>
+            <input id="login-email" type="email" class="input-field" placeholder="Correo electrónico"
+              oninput="clearErr('login-email-err', this)" />
+          </div>
+          <p id="login-email-err" class="err-text">El correo es requerido</p>
+        </div>
+
+        <div class="mb-5">
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input id="login-password" type="password" class="input-field" placeholder="Contraseña"
+              oninput="clearErr('login-pwd-err', this)" />
+            <button class="eye-btn" onclick="togglePwd('login-password', this)">👁️</button>
+          </div>
+          <p id="login-pwd-err" class="err-text">La contraseña es requerida</p>
+        </div>
+
+        <div id="login-general-err" class="general-err"></div>
+
+        <button id="login-btn" class="submit-btn mt-2 mb-5" onclick="handleLogin()">
+          <span id="login-btn-text">INICIAR SESIÓN</span>
+          <div id="login-spinner" class="spinner"></div>
+        </button>
+
+        <p class="text-center text-sm text-gray-400">
+          ¿No tienes cuenta?
+          <a href="#" class="text-[#3DBFA0] font-semibold ml-1" onclick="switchTo('register'); return false;">Regístrate</a>
+        </p>
+      </div>
+
+      <!-- REGISTER -->
+      <div id="panel-register" class="panel">
+        <h1 class="text-2xl font-bold text-gray-800 text-center mb-8">Crear Cuenta</h1>
+
+        <div class="mb-4">
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input id="reg-name" type="text" class="input-field" placeholder="Nombre completo"
+              oninput="clearErr('reg-name-err', this)" />
+          </div>
+          <p id="reg-name-err" class="err-text">El nombre es requerido</p>
+        </div>
+
+        <div class="mb-4">
+          <div class="input-wrap">
+            <span class="input-icon">✉️</span>
+            <input id="reg-email" type="email" class="input-field" placeholder="Correo electrónico"
+              oninput="clearErr('reg-email-err', this)" />
+          </div>
+          <p id="reg-email-err" class="err-text">El correo es requerido</p>
+        </div>
+
+        <div class="mb-4">
+          <div class="input-wrap">
+            <span class="input-icon">📱</span>
+            <input id="reg-phone" type="tel" class="input-field" placeholder="Teléfono (opcional)" />
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input id="reg-password" type="password" class="input-field" placeholder="Contraseña (mín. 6 caracteres)"
+              oninput="clearErr('reg-pwd-err', this)" />
+            <button class="eye-btn" onclick="togglePwd('reg-password', this)">👁️</button>
+          </div>
+          <p id="reg-pwd-err" class="err-text">La contraseña es requerida</p>
+        </div>
+
+        <div class="mb-4">
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input id="reg-confirm-pwd" type="password" class="input-field" placeholder="Confirmar contraseña"
+              oninput="clearErr('reg-confirm-err', this)" />
+            <button class="eye-btn" onclick="togglePwd('reg-confirm-pwd', this)">👁️</button>
+          </div>
+          <p id="reg-confirm-err" class="err-text">Las contraseñas no coinciden</p>
+        </div>
+
+        <div class="mb-4">
+          <button type="button" id="reg-location-btn" onclick="getRegLocation()"
+            class="w-full py-3 rounded-xl border-2 border-dashed border-[#A7F3D0] bg-[#F0FDF4] text-[#065F46] font-semibold text-sm hover:bg-[#DCFCE7] transition-colors">
+            🗺️ <span id="reg-location-text">Seleccionar domicilio con ubicación actual (opcional)</span>
+          </button>
+        </div>
+
+        <div id="reg-general-err" class="general-err"></div>
+
+        <button id="reg-btn" class="submit-btn mt-1 mb-5" onclick="handleRegister()">
+          <span id="reg-btn-text">REGISTRARSE</span>
+          <div id="reg-spinner" class="spinner"></div>
+        </button>
+
+        <p class="text-center text-sm text-gray-400">
+          ¿Ya tienes cuenta?
+          <a href="#" class="text-[#3DBFA0] font-semibold ml-1" onclick="switchTo('login'); return false;">Inicia sesión</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api';
+
+    function switchTo(mode) {
+      document.getElementById('panel-login').classList.toggle('active', mode === 'login');
+      document.getElementById('panel-register').classList.toggle('active', mode === 'register');
+      document.getElementById('banner-login').classList.toggle('active', mode === 'login');
+      document.getElementById('banner-register').classList.toggle('active', mode === 'register');
+    }
+
+    function togglePwd(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const isText = input.type === 'text';
+      input.type = isText ? 'password' : 'text';
+      btn.textContent = isText ? '👁️' : '🙈';
+    }
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.style.display = 'block';
+      const input = el.previousElementSibling?.querySelector('input') || el.previousElementSibling;
+      if (input) input.classList.add('error');
+    }
+
+    function clearErr(errId, input) {
+      const el = document.getElementById(errId);
+      el.style.display = 'none';
+      input.classList.remove('error');
+    }
+
+    function showGeneralErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function setLoading(prefix, loading) {
+      document.getElementById(prefix + '-btn').disabled = loading;
+      document.getElementById(prefix + '-btn-text').style.display = loading ? 'none' : 'inline';
+      document.getElementById(prefix + '-spinner').style.display = loading ? 'block' : 'none';
+    }
+
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      document.getElementById('login-general-err').style.display = 'none';
+
+      let ok = true;
+      if (!email) { showErr('login-email-err', 'El correo es requerido'); ok = false; }
+      else if (!validateEmail(email)) { showErr('login-email-err', 'Correo inválido'); ok = false; }
+      if (!password) { showErr('login-pwd-err', 'La contraseña es requerida'); ok = false; }
+      if (!ok) return;
+
+      setLoading('login', true);
+      try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        showGeneralErr('login-general-err', e.message || 'Error al iniciar sesión');
+      } finally {
+        setLoading('login', false);
+      }
+    }
+
+    let regAddress = null;
+
+    function getRegLocation() {
+      if (!navigator.geolocation) {
+        alert('Tu navegador no soporta geolocalización');
+        return;
+      }
+      document.getElementById('reg-location-text').textContent = 'Obteniendo ubicación...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          regAddress = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+          document.getElementById('reg-location-text').textContent =
+            `📍 ${regAddress.latitude.toFixed(5)}, ${regAddress.longitude.toFixed(5)}`;
+        },
+        () => {
+          document.getElementById('reg-location-text').textContent = 'Seleccionar domicilio con ubicación actual (opcional)';
+          alert('No se pudo obtener tu ubicación');
+        }
+      );
+    }
+
+    async function handleRegister() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      const confirmPwd = document.getElementById('reg-confirm-pwd').value.trim();
+      document.getElementById('reg-general-err').style.display = 'none';
+
+      let ok = true;
+      if (!name) { showErr('reg-name-err', 'El nombre es requerido'); ok = false; }
+      if (!email) { showErr('reg-email-err', 'El correo es requerido'); ok = false; }
+      else if (!validateEmail(email)) { showErr('reg-email-err', 'Correo inválido'); ok = false; }
+      if (!password) { showErr('reg-pwd-err', 'La contraseña es requerida'); ok = false; }
+      else if (password.length < 6) { showErr('reg-pwd-err', 'Mínimo 6 caracteres'); ok = false; }
+      if (!confirmPwd) { showErr('reg-confirm-err', 'Confirma tu contraseña'); ok = false; }
+      else if (password !== confirmPwd) { showErr('reg-confirm-err', 'Las contraseñas no coinciden'); ok = false; }
+      if (!ok) return;
+
+      setLoading('reg', true);
+      try {
+        const body = { name, email, password };
+        if (phone) body.phone = phone;
+        if (regAddress) body.address = regAddress;
+
+        const res = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = 'dashboard.html';
+      } catch (e) {
+        showGeneralErr('reg-general-err', e.message || 'Error al registrarse');
+      } finally {
+        setLoading('reg', false);
+      }
+    }
+
+    // Enter para submit
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const loginActive = document.getElementById('panel-login').classList.contains('active');
+      loginActive ? handleLogin() : handleRegister();
+    });
+  </script>
+</body>
+</html>

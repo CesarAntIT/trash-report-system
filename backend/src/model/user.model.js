@@ -8,7 +8,7 @@ class Usuario {
 	 * Crea Una Instancia De Usuario
 	 * @param {string} nombre - Nombre Del Usuario
 	 * @param {string} apellido - Apellido Del Usuario
-	 * @param {stirng} numero_telefono - Numero Del Usuario
+	 * @param {string} numero_telefono - Numero Del Usuario
 	 * @param {string} correo - Correo Del Usuario
 	 * @param {string} contrasena - Contrasena Del Usuario
 	 * @param {number} longitud - Logintud Que Proviene Del Usuario(Para Ubicar El En Mapa)

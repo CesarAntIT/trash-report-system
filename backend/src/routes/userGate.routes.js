@@ -1,7 +1,5 @@
 const { Router } = require('express')
 
-//Las Funciones Que Viene Del Controller Para Usar En El Router Y Se Ejecuten En cual quir Accion Http
-
 const RequestUserSolicitudeApi = require('../controllers/users.controller.js')
 
 const router = Router()
@@ -13,4 +11,7 @@ router.post('/users', RequestUserSolicitudeApi.CrearUsuario)
 router.post('/login', RequestUserSolicitudeApi.IniciarSesion)
 //Metodo Put Para Editar Usuario
 router.put('/:id', RequestUserSolicitudeApi.EditarUsuario)
+//Metodo Get Para Obtener La Informacion Del Usuario
+router.get('/:id', authMiddleware, RequestUserSolicitudeApi.GetInfoUsuario) 
+
 module.exports = router

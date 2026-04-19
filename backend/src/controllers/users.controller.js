@@ -7,6 +7,9 @@ const { ObjectId } = require('mongodb')
 // Modelo Entidad De la Clase O Tipo Usuario Requerido
 const Usuario = require('../model/user.model.js')
 
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+
 // Modelo De La Tabla Donde Se Almacenan Los Datos (Que Debemos Usar) Por Nombre DbCollecion
 const dbColleccion = () => client.db('mydb').collection('usuarios')
 
@@ -37,11 +40,92 @@ class RequestUserSolicitudeApi {
 			if (ExisteUsuario) {
 				return response.status(409).json({
 					success: false,
-					message: 'Este Correo Ha Sido Tomado Por Otra Persona ',
+					message: 'Este Correo Ha Sido Tomado Por Otra Persona',
 				})
 			}
+
+			// Encriptar contraseña antes de guardar
+			const salt = await bcrypt.genSalt(10)
+			NuevoUsuario.contrasena = await bcrypt.hash(NuevoUsuario.contrasena, salt)
+
 			const resultado = await dbColleccion().insertOne(NuevoUsuario)
-			response.status(201).json({ success: true, id: resultado.insertedId })
+
+			// Generar token JWT
+			const token = jwt.sign(
+				{ userId: resultado.insertedId, correo: NuevoUsuario.correo },
+				process.env.JWT_SECRET || 'secreto_seguro',
+				{ expiresIn: '7d' }
+			)
+
+			response.status(201).json({
+				success: true,
+				token,
+				user: {
+					id: resultado.insertedId,
+					nombre: NuevoUsuario.nombre,
+					apellido: NuevoUsuario.apellido,
+					correo: NuevoUsuario.correo,
+				},
+			})
+		} catch (error) {
+			response.status(500).json({ success: false, message: error.message })
+		}
+	}
+
+	/**
+	 * Metodo Statico Para Iniciar Sesion
+	 * @param {request} request - Correo y Contrasena Del Usuario
+	 * @param {response} response - Token JWT si las credenciales son correctas
+	 */
+	static async Login(request, response) {
+		try {
+			const { correo, contrasena } = request.body
+
+			if (!correo || !contrasena) {
+				return response.status(400).json({
+					success: false,
+					message: 'Correo y contraseña son requeridos',
+				})
+			}
+
+			// Buscar usuario por correo
+			const usuario = await dbColleccion().findOne({
+				correo: correo.trim().toLowerCase(),
+			})
+
+			if (!usuario) {
+				return response.status(401).json({
+					success: false,
+					message: 'El correo electrónico no está registrado',
+				})
+			}
+
+			// Verificar contraseña
+			const contrasenaValida = await bcrypt.compare(contrasena, usuario.contrasena)
+			if (!contrasenaValida) {
+				return response.status(401).json({
+					success: false,
+					message: 'Contraseña incorrecta',
+				})
+			}
+
+			// Generar token JWT
+			const token = jwt.sign(
+				{ userId: usuario._id, correo: usuario.correo },
+				process.env.JWT_SECRET || 'secreto_seguro',
+				{ expiresIn: '7d' }
+			)
+
+			response.json({
+				success: true,
+				token,
+				user: {
+					id: usuario._id,
+					nombre: usuario.nombre,
+					apellido: usuario.apellido,
+					correo: usuario.correo,
+				},
+			})
 		} catch (error) {
 			response.status(500).json({ success: false, message: error.message })
 		}
@@ -283,65 +367,95 @@ class RequestUserSolicitudeApi {
 	}
 
 	/**
-	 * @description Filtra usuarios por nombre y/o dirección con radio de distancia.
-	 * Si no se envían filtros, devuelve todos los usuarios.
-	 *
-	 * @route   GET /usuarios
-	 * @access  Admin
-	 *
-	 * @param {string} [request.query.nombre]    - Texto a buscar en el nombre
-	 * @param {string} [request.query.direccion] - Dirección de referencia para radio
-	 * @param {number} [request.query.latitud]   - Latitud del punto de referencia
-	 * @param {number} [request.query.longitud]  - Longitud del punto de referencia
-	 * @param {number} [request.query.radio]     - Radio en km (default: 5)
-	 */
-	static async FiltrarUsuarios(request, response) {
-		try {
-			const { nombre, longitud, latitud, radio } = request.query
+ * @method GetInfoUsuario
+ * @description Obtiene la información de un usuario por su ID.
+ * Solo el propietario de la cuenta puede ver el campo `esPropietario: true`
+ * para que el frontend muestre el botón "Editar".
+ *
+ * @route   GET /usuarios/:id
+ * @access  Privado (requiere token JWT)
+ *
+ * @param {string} request.params.id        - ID del usuario a consultar (ObjectId de MongoDB)
+ * @param {string} request.userId            - ID del usuario autenticado (viene del middleware JWT)
+ *
+ * @returns {Object} JSON con la información del usuario
+ *
+ * @example
+ * // Request
+ * GET http://localhost:3000/api/usuarios/69d3f718a643a4ad930abfe7
+ * Headers: { Authorization: "Bearer <token>" }
+ *
+ * @example
+ * // Respuesta exitosa - 200
+ * {
+ *   "success": true,
+ *   "usuario": {
+ *     "id": "69d3f718a643a4ad930abfe7",
+ *     "nombre_completo": "Juan Pérez",
+ *     "numero_telefono": "849123456",
+ *     "correo_electronico": "juan@gmail.com",
+ *     "direccion_personal": "Calle Principal 123",
+ *     "ubicacion": {
+ *       "latitud": 18.4861,
+ *       "longitud": -69.9312
+ *     }
+ *   },
+ *   "esPropietario": true
+ * }
+ *
+ * @example
+ * // Respuesta error - 404
+ * { "success": false, "message": "Usuario no encontrado" }
+ */
+static async GetInfoUsuario(request, response) {
+    try {
+        const { id } = request.params
 
-			const filtro = {}
+        if (!ObjectId.isValid(id)) {
+            return response.status(400).json({
+                success: false,
+                message: 'ID de usuario inválido',
+            })
+        }
 
-			// Filtro por nombre
-			// Busca usuarios cuyo nombre CONTENGA los caracteres escritos
-			if (nombre && nombre.trim() !== '') {
-				filtro.nombre = { $regex: nombre.trim(), $options: 'i' } // 'i' = case insensitive
-			}
+        // Buscar el usuario en la base de datos
+        const usuario = await dbColleccion().findOne({
+            _id: new ObjectId(id),
+        })
 
-			// Filtro por ubicación/radio
-			// Si llegan coordenadas busca usuarios dentro del radio indicado
-			if (longitud && latitud) {
-				const lng = parseFloat(longitud)
-				const lat = parseFloat(latitud)
-				const radioKm = parseFloat(radio) || 5 // default 5km
+        // Si no existe el usuario
+        if (!usuario) {
+            return response.status(404).json({
+                success: false,
+                message: 'Usuario no encontrado',
+            })
+        }
 
-				// MongoDB usa radianes para $centerSphere dividir entre 6378.1 (radio tierra en km)
-				filtro.$or = [
-					{
-						longitud: { $gte: lng - radioKm / 111, $lte: lng + radioKm / 111 },
-						latitud: { $gte: lat - radioKm / 111 },
-					},
-				]
-			}
+        const esPropietario = request.userId.toString() === id.toString()
 
-			const usuarios = await dbColleccion().find(filtro).toArray()
+        const direccion_personal = usuario.direccion && usuario.direccion.trim() !== ''
+            ? usuario.direccion
+            : 'Dirección no disponible'
 
-			// Si no hay resultados
-			if (usuarios.length === 0) {
-				return response.status(404).json({
-					success: false,
-					message: 'No se encontraron usuarios con esos filtros',
-				})
-			}
-
-			response.status(200).json({
-				success: true,
-				total: usuarios.length,
-				data: usuarios,
-			})
-		} catch (error) {
-			response.status(500).json({ success: false, message: error.message })
-		}
-	}
+        response.status(200).json({
+            success: true,
+            usuario: {
+                id: usuario._id,
+                nombre_completo: `${usuario.nombre} ${usuario.apellido}`,
+                numero_telefono: usuario.numero_telefono || 'No registrado',
+                correo_electronico: usuario.correo,
+                direccion_personal,
+                ubicacion: {
+                    latitud: usuario.latitud ?? null,
+                    longitud: usuario.longitud ?? null,
+                },
+            },
+            esPropietario,
+        })
+    } catch (error) {
+        response.status(500).json({ success: false, message: error.message })
+    }
+}
 }
 
 module.exports = RequestUserSolicitudeApi
