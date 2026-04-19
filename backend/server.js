@@ -9,6 +9,7 @@ const authRoutes = require('./src/routes/auth');
 const adminRoutes = require('./src/routes/admin');
 const reportRoutes = require('./src/routes/reports');
 const notificationRoutes = require('./src/routes/notifications');
+ const adminReportsRoutes = require('./src/routes/admin-reports');
 
 const app = express();
 
@@ -179,3 +180,6 @@ mongoose
     });
   })
   .catch((err) => console.error('Error al conectar MongoDB:', err));
+
+  app.use('/admin/reports', adminReportsRoutes);
+  app.use('/user-search', require('./src/routes/user-search'));
