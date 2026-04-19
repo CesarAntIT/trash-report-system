@@ -281,6 +281,67 @@ class RequestUserSolicitudeApi {
 			response.status(500).json({ success: false, message: error.message })
 		}
 	}
+
+	/**
+	 * @description Filtra usuarios por nombre y/o dirección con radio de distancia.
+	 * Si no se envían filtros, devuelve todos los usuarios.
+	 *
+	 * @route   GET /usuarios
+	 * @access  Admin
+	 *
+	 * @param {string} [request.query.nombre]    - Texto a buscar en el nombre
+	 * @param {string} [request.query.direccion] - Dirección de referencia para radio
+	 * @param {number} [request.query.latitud]   - Latitud del punto de referencia
+	 * @param {number} [request.query.longitud]  - Longitud del punto de referencia
+	 * @param {number} [request.query.radio]     - Radio en km (default: 5)
+	 */
+	static async FiltrarUsuarios(request, response) {
+		try {
+			const { nombre, longitud, latitud, radio } = request.query
+
+			const filtro = {}
+
+			// Filtro por nombre
+			// Busca usuarios cuyo nombre CONTENGA los caracteres escritos
+			if (nombre && nombre.trim() !== '') {
+				filtro.nombre = { $regex: nombre.trim(), $options: 'i' } // 'i' = case insensitive
+			}
+
+			// Filtro por ubicación/radio
+			// Si llegan coordenadas busca usuarios dentro del radio indicado
+			if (longitud && latitud) {
+				const lng = parseFloat(longitud)
+				const lat = parseFloat(latitud)
+				const radioKm = parseFloat(radio) || 5 // default 5km
+
+				// MongoDB usa radianes para $centerSphere dividir entre 6378.1 (radio tierra en km)
+				filtro.$or = [
+					{
+						longitud: { $gte: lng - radioKm / 111, $lte: lng + radioKm / 111 },
+						latitud: { $gte: lat - radioKm / 111 },
+					},
+				]
+			}
+
+			const usuarios = await dbColleccion().find(filtro).toArray()
+
+			// Si no hay resultados
+			if (usuarios.length === 0) {
+				return response.status(404).json({
+					success: false,
+					message: 'No se encontraron usuarios con esos filtros',
+				})
+			}
+
+			response.status(200).json({
+				success: true,
+				total: usuarios.length,
+				data: usuarios,
+			})
+		} catch (error) {
+			response.status(500).json({ success: false, message: error.message })
+		}
+	}
 }
 
 module.exports = RequestUserSolicitudeApi
