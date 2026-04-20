@@ -204,6 +204,125 @@ router.get('/UbicacionesDelMes', authMiddleware, async (req, res) => {
 
 
 /**
+ * @route   GET /api/reports/metricas/resumen
+ * @desc    Total de reportes del mes, cantidad por estado (Recibido, Pendiente, etc.)
+ * @access  Privado - Solo Administrador
+ */
+router.get('/metricas/resumen', authMiddleware, async (req, res) => {
+  try {
+    const User = require('../models/User')
+    const usuarioActual = await User.findById(req.userId)
+
+    if (!usuarioActual || !usuarioActual.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Acceso denegado. Solo administradores.',
+      })
+    }
+
+    const ahora = new Date()
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+    const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    const agrupado = await Report.aggregate([
+      { $match: { createdAt: { $gte: inicioMes, $lte: finMes } } },
+      { $group: { _id: '$status', cantidad: { $sum: 1 } } },
+    ])
+
+    // Construir resumen con todos los estados
+    const estados = ['Recibido', 'Pendiente', 'Cancelado', 'Completado']
+    const resumen = { total: 0 }
+
+    estados.forEach((e) => (resumen[e] = 0))
+    agrupado.forEach(({ _id, cantidad }) => {
+      if (resumen[_id] !== undefined) resumen[_id] = cantidad
+      resumen.total += cantidad
+    })
+
+    const mes = ahora.toLocaleString('es-MX', { month: 'long', year: 'numeric' })
+
+    res.status(200).json({ success: true, mes, resumen })
+  } catch (err) {
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
+
+/**
+ * @route   GET /api/reports/metricas/distribucion
+ * @desc    Distribución de reportes del mes por estado (para gráfico de barras o pastel)
+ * @access  Privado - Solo Administrador
+ */
+router.get('/metricas/distribucion', authMiddleware, async (req, res) => {
+  try {
+    const User = require('../models/User')
+    const usuarioActual = await User.findById(req.userId)
+
+    if (!usuarioActual || !usuarioActual.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Acceso denegado. Solo administradores.',
+      })
+    }
+
+    const ahora = new Date()
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+    const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    const agrupado = await Report.aggregate([
+      { $match: { createdAt: { $gte: inicioMes, $lte: finMes } } },
+      { $group: { _id: '$status', cantidad: { $sum: 1 } } },
+      { $sort: { cantidad: -1 } },
+    ])
+
+    const total = agrupado.reduce((acc, { cantidad }) => acc + cantidad, 0)
+
+    const distribucion = agrupado.map(({ _id, cantidad }) => ({
+      estado: _id,
+      cantidad,
+      porcentaje: total > 0 ? parseFloat(((cantidad / total) * 100).toFixed(1)) : 0,
+    }))
+
+    res.status(200).json({ success: true, distribucion })
+  } catch (err) {
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
+
+/**
+ * @route   GET /api/reports/metricas/top-direcciones
+ * @desc    Top de direcciones con mayor cantidad de reportes (de todos los tiempos)
+ * @access  Privado - Solo Administrador
+ */
+router.get('/metricas/top-direcciones', authMiddleware, async (req, res) => {
+  try {
+    const User = require('../models/User')
+    const usuarioActual = await User.findById(req.userId)
+
+    if (!usuarioActual || !usuarioActual.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Acceso denegado. Solo administradores.',
+      })
+    }
+
+    const limite = parseInt(req.query.limite) || 5
+
+    const topDirecciones = await Report.aggregate([
+      { $group: { _id: '$locationName', total_reportes: { $sum: 1 } } },
+      { $sort: { total_reportes: -1 } },
+      { $limit: limite },
+      { $project: { _id: 0, direccion: '$_id', total_reportes: 1 } },
+    ])
+
+    res.status(200).json({ success: true, top_direcciones: topDirecciones })
+  } catch (err) {
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
+/**
  * @method GetDetalleReporte
  * @description Devuelve la información completa de un reporte por su reportId (UUID).
  * Accesible por cualquier usuario autenticado (ciudadano o administrador).
