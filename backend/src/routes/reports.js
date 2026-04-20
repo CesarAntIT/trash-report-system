@@ -135,6 +135,74 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/reports/UbicacionesDelMes — reportes del mes actual con posición inicial del mapa
+/**
+ * @method GetUbicacionesDelMes
+ * @description Devuelve las coordenadas de todos los reportes del mes actual
+ * para mostrarlos como punteros en el mapa.
+ */
+
+router.get('/UbicacionesDelMes', authMiddleware, async (req, res) => {
+  try {
+    const SANTO_DOMINGO = { latitud: 18.4861, longitud: -69.9312 }
+    const User = require('../models/User')
+    const usuarioActual = await User.findById(req.userId)
+ 
+    if (!usuarioActual) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado',
+      })
+    }
+
+    let posicion_inicial = { ...SANTO_DOMINGO, fuente: 'default' }
+
+    const esAdmin = usuarioActual.isAdmin === true
+
+    if (!esAdmin) {
+      const tieneUbicacion =
+        usuarioActual.address &&
+        typeof usuarioActual.address.latitude === 'number' &&
+        typeof usuarioActual.address.longitude === 'number'
+
+      if (tieneUbicacion) {
+        posicion_inicial = {
+          latitud: usuarioActual.address.latitude,
+          longitud: usuarioActual.address.longitude,
+          fuente: 'usuario',
+        }
+      }
+    }
+
+    const ahora = new Date()
+    const inicioMes = new Date(ahora.getFullYear(), ahora.getMonth(), 1)
+    const finMes = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59, 999)
+
+    const reportesDelMes = await Report.find({
+      createdAt: { $gte: inicioMes, $lte: finMes },
+    }).select('reportId locationName latitude longitude status fecha')
+
+    // Mapea a formato de punteros
+    const punteros = reportesDelMes.map((r) => ({
+      reportId: r.reportId,
+      locationName: r.locationName,
+      latitud: r.latitude,
+      longitud: r.longitude,
+      status: r.status,
+      fecha: r.fecha,
+    }))
+    res.status(200).json({
+      success: true,
+      posicion_inicial,
+      punteros,
+      total: punteros.length,
+    })
+  } catch (err) {
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
+
 /**
  * @method GetDetalleReporte
  * @description Devuelve la información completa de un reporte por su reportId (UUID).
