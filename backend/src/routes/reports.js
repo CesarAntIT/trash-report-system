@@ -135,4 +135,42 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * @method GetDetalleReporte
+ * @description Devuelve la información completa de un reporte por su reportId (UUID).
+ * Accesible por cualquier usuario autenticado (ciudadano o administrador).
+ */
+router.get('/:reportId', authMiddleware, async (req, res) => {
+  try {
+    const { reportId } = req.params
+
+    const reporte = await Report.findOne({ reportId })
+
+    if (!reporte) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reporte no encontrado',
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      reporte: {
+        reportId: reporte.reportId,
+        usuarioId: reporte.user,
+        locationName: reporte.locationName,
+        ubicacion: {
+          latitud: reporte.latitude,
+          longitud: reporte.longitude,
+        },
+        fecha: reporte.fecha,
+        status: reporte.status,
+        evidencias: reporte.evidencias,
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
 module.exports = router;
