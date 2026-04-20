@@ -82,6 +82,10 @@
       <a href="#" class="sidebar-link" onclick="openModal()">
         <span>📍</span> Nuevo Reporte
       </a>
+      <a href="#" class="sidebar-link" onclick="goToUserInfo()">
+        <span>👤</span> Mi Perfil
+      </a>
+
     </nav>
 
     <div class="px-3 py-4 border-t border-gray-100">
@@ -280,6 +284,13 @@
       localStorage.removeItem('user');
       window.location.href = 'index.html';
     }
+
+    function goToUserInfo() {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user?.id) {
+        window.location.href = `/userinfo/${user.id}`;
+      }
+     }
 
     // ── Sections ─────────────────────────────────────────────────────────────
     function showSection(name) {
