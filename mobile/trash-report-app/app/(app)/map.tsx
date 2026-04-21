@@ -100,6 +100,28 @@ export default function DashboardScreen() {
           </View>
           <Text style={styles.actionArrow}>›</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(app)/notifications')}>
+          <View style={[styles.actionIcon, { backgroundColor: '#FFF7ED' }]}>
+            <Text style={styles.actionEmoji}>🔔</Text>
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>Notificaciones</Text>
+            <Text style={styles.actionDesc}>Estado de tus reportes</Text>
+          </View>
+          <Text style={styles.actionArrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/(app)/profile')}>
+          <View style={[styles.actionIcon, { backgroundColor: '#F5F3FF' }]}>
+            <Text style={styles.actionEmoji}>👤</Text>
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>Mi Perfil</Text>
+            <Text style={styles.actionDesc}>Ver y editar tu información</Text>
+          </View>
+          <Text style={styles.actionArrow}>›</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

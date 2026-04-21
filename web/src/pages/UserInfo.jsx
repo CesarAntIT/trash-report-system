@@ -10,7 +10,7 @@ function UserInfo() {
       try {
         const token = localStorage.getItem("token");
 
-        const res = await fetch(`http://localhost:3000/api/${id}`, {
+        const res = await fetch(`http://localhost:3000/api/users/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -91,7 +91,10 @@ function UserInfo() {
 
           {/* boton editar */}
           {userData.esPropietario && (
-            <button className="bg-green-500 text-white px-4 py-2 rounded-lg">
+            <button
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition"
+              onClick={() => window.location.href = `/edit-profile/${id}`}
+            >
               Editar Perfil
             </button>
           )}

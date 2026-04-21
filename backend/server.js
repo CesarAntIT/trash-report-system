@@ -9,7 +9,9 @@ const authRoutes = require('./src/routes/auth');
 const adminRoutes = require('./src/routes/admin');
 const reportRoutes = require('./src/routes/reports');
 const notificationRoutes = require('./src/routes/notifications');
- const adminReportsRoutes = require('./src/routes/admin-reports');
+const adminReportsRoutes = require('./src/routes/admin-reports');
+const userRoutes = require('./src/routes/users');
+const userSearchRoutes = require('./src/routes/user-search');
 
 const app = express();
 
@@ -164,22 +166,27 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/reports', reportRoutes);
-app.use('/admin', adminRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/admin', adminRoutes);
+app.use('/admin/reports', adminReportsRoutes);
+app.use('/user-search', userSearchRoutes);
 
-const PORT = process.env.PORT || 3000;
+// Exporta app para testing; solo conecta y levanta si se ejecuta directamente
+module.exports = app;
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Conectado a MongoDB');
-    app.listen(PORT, () => {
-      console.log(`Servidor corriendo en puerto ${PORT}`);
-      console.log(`Swagger UI:   http://localhost:${PORT}/api/docs`);
-      console.log(`Admin panel:  http://localhost:${PORT}/admin`);
-    });
-  })
-  .catch((err) => console.error('Error al conectar MongoDB:', err));
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  mongoose
+    .connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log('Conectado a MongoDB');
+      app.listen(PORT, () => {
+        console.log(`Servidor corriendo en puerto ${PORT}`);
+        console.log(`Swagger UI:   http://localhost:${PORT}/api/docs`);
+        console.log(`Admin panel:  http://localhost:${PORT}/admin`);
+      });
+    })
+    .catch((err) => console.error('Error al conectar MongoDB:', err));
+}
 
-  app.use('/admin/reports', adminReportsRoutes);
-  app.use('/user-search', require('./src/routes/user-search'));

@@ -33,7 +33,7 @@ router.post(
         longitude,
         fecha: fecha || new Date().toLocaleString('es-MX'),
         evidencias,
-        status: 'Recibido',        // Estado inicial
+        status: 'Pendiente',       // Estado inicial — Admin cambia a Recibido
         // reportId se genera automáticamente como UUID v4
       });
 
@@ -93,9 +93,40 @@ router.patch('/:id/cancel', authMiddleware, async (req, res) => {
     if (report.status === 'Completado') {
       return res.status(400).json({ message: 'No se puede cancelar un reporte completado' });
     }
+    if (report.status !== 'Pendiente') {
+      return res.status(400).json({ message: 'Solo se pueden cancelar reportes en estado Pendiente' });
+    }
     report.status = 'Cancelado';
     await report.save();
     res.json({ message: 'Reporte cancelado', report });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// PATCH /api/reports/:id/receive — Admin cambia Pendiente → Recibido
+router.patch('/:id/receive', authMiddleware, async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const usuario = await User.findById(req.userId);
+    if (!usuario || !usuario.isAdmin) {
+      return res.status(403).json({ message: 'Acceso denegado. Solo administradores.' });
+    }
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ message: 'Reporte no encontrado' });
+    if (report.status !== 'Pendiente') {
+      return res.status(400).json({ message: `El reporte está en estado "${report.status}", solo se pueden recibir reportes Pendientes` });
+    }
+    report.status = 'Recibido';
+    await report.save();
+
+    await Notification.create({
+      user: report.user,
+      message: `Tu reporte en "${report.locationName}" ha sido recibido por el ayuntamiento.`,
+    });
+
+    res.json({ message: 'Reporte marcado como Recibido', report });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error interno del servidor' });
@@ -114,6 +145,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
     if (status) {
       filter.status = status;
+    } else {
+      filter.status = { $ne: 'Cancelado' };
     }
 
     if (startDate || endDate) {

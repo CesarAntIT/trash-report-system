@@ -4,6 +4,7 @@ import {
   TouchableOpacity, RefreshControl, Platform, StatusBar,
   Modal, ScrollView, Alert, Image,
 } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { getToken, API_URL } from '../../services/api';
@@ -77,9 +78,9 @@ export default function MyReportsScreen() {
       'Cancelar reporte',
       `¿Estás seguro de cancelar el reporte ${shortId(report._id)}?`,
       [
-        { text: 'No', style: 'cancel' },
+        { text: 'Volver atrás', style: 'cancel' },
         {
-          text: 'Sí, cancelar',
+          text: 'Cancelar',
           style: 'destructive',
           onPress: async () => {
             setCancelling(true);
@@ -188,12 +189,12 @@ export default function MyReportsScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.cancelBtn, (item.status === 'Cancelado' || item.status === 'Completado') && styles.cancelBtnDisabled]}
+                  style={[styles.cancelBtn, item.status !== 'Pendiente' && styles.cancelBtnDisabled]}
                   onPress={() => handleCancel(item)}
-                  disabled={item.status === 'Cancelado' || item.status === 'Completado' || cancelling}
+                  disabled={item.status !== 'Pendiente' || cancelling}
                 >
-                  <Text style={[styles.cancelBtnText, (item.status === 'Cancelado' || item.status === 'Completado') && styles.cancelBtnTextDisabled]}>
-                    {item.status === 'Cancelado' ? 'Cancelado' : item.status === 'Completado' ? 'Completado' : '✕  Cancelar'}
+                  <Text style={[styles.cancelBtnText, item.status !== 'Pendiente' && styles.cancelBtnTextDisabled]}>
+                    {item.status === 'Cancelado' ? 'Cancelado' : item.status === 'Completado' ? 'Completado' : item.status === 'Recibido' ? 'Recibido' : '✕  Cancelar'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -248,6 +249,24 @@ export default function MyReportsScreen() {
                   </Text>
                 </View>
 
+                {/* Mapa de ubicación */}
+                <View style={{ marginTop: 12, marginBottom: 8 }}>
+                  <Text style={styles.infoLabel}>Ubicación en Mapa</Text>
+                  <MapView
+                    style={styles.mapView}
+                    scrollEnabled={false}
+                    zoomEnabled={false}
+                    initialRegion={{
+                      latitude: selected.latitude,
+                      longitude: selected.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                  >
+                    <Marker coordinate={{ latitude: selected.latitude, longitude: selected.longitude }} />
+                  </MapView>
+                </View>
+
                 {/* Evidencias */}
                 {selected.evidencias.length > 0 && (
                   <View style={styles.evidenciasSection}>
@@ -260,8 +279,8 @@ export default function MyReportsScreen() {
                   </View>
                 )}
 
-                {/* Botón cancelar desde modal */}
-                {selected.status !== 'Cancelado' && (
+                {/* Botón cancelar desde modal — solo si está Pendiente */}
+                {selected.status === 'Pendiente' && (
                   <TouchableOpacity
                     style={[styles.cancelBtn, { marginTop: 20 }]}
                     onPress={() => handleCancel(selected)}
@@ -365,4 +384,5 @@ const styles = StyleSheet.create({
 
   evidenciasSection: { paddingTop: 12 },
   evidenciaThumb: { width: 90, height: 90, borderRadius: 10, marginRight: 8 },
+  mapView: { width: '100%', height: 160, borderRadius: 12, marginTop: 8 },
 });

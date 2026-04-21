@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Trash Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    :root { --green: #3DBFA0; }
+
+    .sidebar-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: 10px;
+      color: #6B7280; font-size: 14px; font-weight: 500;
+      text-decoration: none; transition: background 0.15s, color 0.15s;
+    }
+    .sidebar-link:hover { background: #F3F4F6; color: #111827; }
+    .sidebar-link.active { background: #ECFDF5; color: #3DBFA0; font-weight: 600; }
+
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 50;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .input-field {
+      width: 100%; padding: 11px 14px; border-radius: 10px;
+      background: #F9FAFB; border: 1.5px solid #E5E7EB;
+      font-size: 14px; color: #111827; outline: none; transition: border-color 0.2s;
+    }
+    .input-field:focus { border-color: #3DBFA0; }
+    .input-field:disabled { background: #F3F4F6; color: #9CA3AF; cursor: not-allowed; }
+
+    .submit-btn {
+      width: 100%; padding: 13px; border-radius: 25px;
+      background: #3DBFA0; color: #fff; font-weight: 700;
+      font-size: 14px; border: none; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(61,191,160,0.35);
+      transition: opacity 0.2s;
+    }
+    .submit-btn:disabled { background: #D1D5DB; box-shadow: none; cursor: not-allowed; }
+    .submit-btn:not(:disabled):hover { opacity: 0.9; }
+
+    #preview-grid img {
+      width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
+    }
+    .photo-wrapper { position: relative; display: inline-block; }
+    .remove-photo {
+      position: absolute; top: -6px; right: -6px;
+      background: #EF4444; color: #fff; border: none; border-radius: 50%;
+      width: 20px; height: 20px; font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .badge {
+      display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex">
+
+  <!-- ── Sidebar ── -->
+  <aside class="w-60 bg-white border-r border-gray-100 flex flex-col min-h-screen shadow-sm fixed top-0 left-0">
+    <div class="px-5 py-5 border-b border-gray-100">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🗑️</span>
+        <span class="text-lg font-bold text-gray-800">TrashReport</span>
+      </div>
+      <p id="welcome-name" class="text-xs text-gray-400 mt-1">Bienvenido</p>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="#" class="sidebar-link active" onclick="showSection('inicio')">
+        <span>🏠</span> Inicio
+      </a>
+      <a href="#" class="sidebar-link" onclick="showSection('reportes')">
+        <span>📋</span> Mis Reportes
+      </a>
+      <a href="#" class="sidebar-link" onclick="openModal()">
+        <span>📍</span> Nuevo Reporte
+      </a>
+      <a href="#" class="sidebar-link" onclick="goToUserInfo()">
+        <span>👤</span> Mi Perfil
+      </a>
+
+    </nav>
+
+    <div class="px-3 py-4 border-t border-gray-100">
+      <button onclick="logout()" class="sidebar-link w-full text-red-400 hover:bg-red-50 hover:text-red-600">
+        <span>🚪</span> Cerrar Sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main content ── -->
+  <main class="ml-60 flex-1 p-8">
+
+    <!-- ── INICIO ── -->
+    <section id="section-inicio">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Panel Principal</h1>
+        <p class="text-sm text-gray-500 mt-1">Bienvenido al sistema de reportes de basura</p>
+      </div>
+
+      <!-- Banner -->
+      <div class="rounded-2xl p-8 mb-6 relative overflow-hidden" style="background:#3DBFA0">
+        <div class="absolute w-64 h-64 rounded-full opacity-10 bg-white" style="top:-60px;right:-60px;"></div>
+        <div class="absolute w-40 h-40 rounded-full opacity-10 bg-white" style="bottom:-30px;left:40px;"></div>
+        <div class="relative z-10">
+          <p class="text-4xl mb-3">🗑️</p>
+          <h2 class="text-2xl font-extrabold text-white mb-2">Reporta basura en tu ciudad</h2>
+          <p class="text-white/80 text-sm mb-6">Ayuda a mantener limpia tu comunidad indicando puntos de acumulación de basura</p>
+          <button onclick="openModal()" class="bg-white font-bold text-sm px-6 py-3 rounded-full hover:opacity-90 transition" style="color:#3DBFA0">
+            + Nuevo Reporte
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4" style="border-left-color:#3DBFA0">
+          <p class="text-3xl font-extrabold text-gray-900" id="stat-total">0</p>
+          <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide font-medium">Mis Reportes</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-l-yellow-400">
+          <p class="text-3xl font-extrabold text-gray-900" id="stat-proceso">0</p>
+          <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide font-medium">En Proceso</p>
+        </div>
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 border-l-4 border-l-emerald-500">
+          <p class="text-3xl font-extrabold text-gray-900" id="stat-resueltos">0</p>
+          <p class="text-xs text-gray-400 mt-1 uppercase tracking-wide font-medium">Resueltos</p>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100">
+          <h3 class="text-sm font-semibold text-gray-700">Acciones rápidas</h3>
+        </div>
+        <div class="divide-y divide-gray-50">
+          <button onclick="openModal()" class="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition text-left">
+            <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-xl">📍</div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-gray-800">Reportar basura</p>
+              <p class="text-xs text-gray-400">Indica un punto con acumulación de basura</p>
+            </div>
+            <span class="text-gray-300 text-xl">›</span>
+          </button>
+          <button onclick="showSection('reportes')" class="w-full flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition text-left">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-xl">📋</div>
+            <div class="flex-1">
+              <p class="text-sm font-semibold text-gray-800">Ver mis reportes</p>
+              <p class="text-xs text-gray-400">Historial de tus reportes enviados</p>
+            </div>
+            <span class="text-gray-300 text-xl">›</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── MIS REPORTES ── -->
+    <section id="section-reportes" class="hidden">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Mis Reportes</h1>
+          <p class="text-sm text-gray-500 mt-1">Historial de reportes enviados</p>
+        </div>
+        <button onclick="openModal()" class="px-5 py-2.5 rounded-full text-white text-sm font-bold shadow" style="background:#3DBFA0">
+          + Nuevo Reporte
+        </button>
+      </div>
+
+      <div id="reports-container">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-16 text-center text-gray-400">
+          <p class="text-4xl mb-3">📋</p>
+          <p class="font-medium">Cargando reportes...</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── MODAL Nuevo Reporte ── -->
+  <div id="modal" class="modal-overlay" onclick="closeModalOutside(event)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+        <h2 class="text-lg font-bold text-gray-800">Nuevo Reporte</h2>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="px-6 py-5 space-y-5">
+
+        <!-- Nombre ubicación -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Nombre de Ubicación <span class="text-red-500">*</span>
+          </label>
+          <input id="r-name" type="text" class="input-field" placeholder="Ej: Parque Central, Calle 5 Norte..." oninput="checkForm()" />
+          <p id="r-name-err" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+
+        <!-- Coordenadas -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Ubicación <span class="text-red-500">*</span>
+          </label>
+          <button onclick="getLocation()" id="loc-btn" class="w-full py-2.5 rounded-xl border border-dashed border-green-300 bg-green-50 text-sm font-semibold mb-3 hover:bg-green-100 transition" style="color:#3DBFA0">
+            📡 Usar mi ubicación actual
+          </button>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <input id="r-lat" type="number" class="input-field" placeholder="Latitud" oninput="checkForm()" />
+            </div>
+            <div>
+              <input id="r-lng" type="number" class="input-field" placeholder="Longitud" oninput="checkForm()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Fecha automática -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Fecha</label>
+          <div class="flex items-center gap-3">
+            <input id="r-fecha" type="text" class="input-field" disabled />
+            <span class="text-xs font-bold px-2 py-1 rounded-lg" style="background:#ECFDF5;color:#3DBFA0">Auto</span>
+          </div>
+        </div>
+
+        <!-- Evidencias -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">
+            Evidencias <span class="text-red-500">*</span>
+            <span class="font-normal text-gray-400">(mínimo 1 foto)</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <label class="cursor-pointer border border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center gap-1 hover:bg-gray-50 transition">
+              <span class="text-2xl">📷</span>
+              <span class="text-xs text-gray-500 font-medium">Desde archivo</span>
+              <input type="file" accept="image/*" multiple class="hidden" onchange="addPhotos(event)" />
+            </label>
+            <div id="no-photos" class="border border-dashed border-yellow-300 bg-yellow-50 rounded-xl py-4 flex flex-col items-center justify-center gap-1">
+              <span class="text-xl">⚠️</span>
+              <span class="text-xs text-yellow-700 font-medium">Sin evidencias</span>
+            </div>
+          </div>
+          <div id="preview-grid" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Hint -->
+        <div id="hint-box" class="hidden bg-orange-50 border border-orange-200 rounded-xl p-3">
+          <p id="hint-text" class="text-orange-700 text-xs leading-5"></p>
+        </div>
+
+        <!-- Botón -->
+        <button id="submit-btn" class="submit-btn" disabled onclick="submitReport()">
+          Enviar Reporte
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api';
+    let photos = []; // { file, dataUrl }
+
+    // ── Auth guard ────────────────────────────────────────────────────────────
+    const token = localStorage.getItem('token');
+    const user  = JSON.parse(localStorage.getItem('user') || 'null');
+
+    if (!token || !user) {
+      window.location.href = 'login.html';
+    } else {
+      document.getElementById('welcome-name').textContent = user.name || user.email;
+      loadReports();
+      setFecha();
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = 'login.html';
+    }
+
+    function goToUserInfo() {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user?.id) {
+        window.location.href = `/userinfo/${user.id}`;
+      }
+     }
+
+    // ── Sections ─────────────────────────────────────────────────────────────
+    function showSection(name) {
+      document.getElementById('section-inicio').classList.add('hidden');
+      document.getElementById('section-reportes').classList.add('hidden');
+      document.getElementById(`section-${name}`).classList.remove('hidden');
+
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      event.currentTarget?.classList.add('active');
+
+      if (name === 'reportes') loadReports();
+    }
+
+    // ── Fecha automática ─────────────────────────────────────────────────────
+    function setFecha() {
+      const now = new Date();
+      document.getElementById('r-fecha').value = now.toLocaleString('es-MX', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    // ── Modal ─────────────────────────────────────────────────────────────────
+    function openModal() {
+      photos = [];
+      document.getElementById('preview-grid').innerHTML = '';
+      document.getElementById('no-photos').classList.remove('hidden');
+      document.getElementById('r-name').value = '';
+      document.getElementById('r-lat').value = '';
+      document.getElementById('r-lng').value = '';
+      setFecha();
+      checkForm();
+      document.getElementById('modal').classList.add('open');
+    }
+    function closeModal() { document.getElementById('modal').classList.remove('open'); }
+    function closeModalOutside(e) { if (e.target === document.getElementById('modal')) closeModal(); }
+
+    // ── Geolocation ──────────────────────────────────────────────────────────
+    function getLocation() {
+      const btn = document.getElementById('loc-btn');
+      btn.textContent = '⏳ Obteniendo ubicación...';
+      btn.disabled = true;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          document.getElementById('r-lat').value = pos.coords.latitude.toFixed(6);
+          document.getElementById('r-lng').value = pos.coords.longitude.toFixed(6);
+          btn.textContent = '✅ Ubicación obtenida';
+          btn.disabled = false;
+          checkForm();
+        },
+        () => {
+          btn.textContent = '❌ Error — introdúcela manualmente';
+          btn.disabled = false;
+        }
+      );
+    }
+
+    // ── Photos ────────────────────────────────────────────────────────────────
+    function addPhotos(event) {
+      const files = Array.from(event.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          photos.push({ file, dataUrl: e.target.result });
+          renderPhotos();
+          checkForm();
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removePhoto(index) {
+      photos.splice(index, 1);
+      renderPhotos();
+      checkForm();
+    }
+
+    function renderPhotos() {
+      const grid = document.getElementById('preview-grid');
+      const noPhotos = document.getElementById('no-photos');
+      grid.innerHTML = '';
+      noPhotos.classList.toggle('hidden', photos.length > 0);
+      photos.forEach((p, i) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'photo-wrapper';
+        wrap.innerHTML = `
+          <img src="${p.dataUrl}" class="rounded-lg" />
+          <button class="remove-photo" onclick="removePhoto(${i})">✕</button>
+        `;
+        grid.appendChild(wrap);
+      });
+    }
+
+    // ── Form validation ───────────────────────────────────────────────────────
+    function checkForm() {
+      const name = document.getElementById('r-name').value.trim();
+      const lat  = document.getElementById('r-lat').value.trim();
+      const lng  = document.getElementById('r-lng').value.trim();
+      const ok   = name && lat && lng && photos.length >= 1;
+
+      document.getElementById('submit-btn').disabled = !ok;
+
+      const hints = [];
+      if (!name) hints.push('· Agrega el nombre de ubicación');
+      if (!lat || !lng) hints.push('· Agrega las coordenadas o usa tu ubicación');
+      if (photos.length === 0) hints.push('· Agrega al menos 1 foto de evidencia');
+
+      const hintBox = document.getElementById('hint-box');
+      if (hints.length > 0 && (name || lat || lng || photos.length > 0)) {
+        hintBox.classList.remove('hidden');
+        document.getElementById('hint-text').textContent = hints.join('\n');
+      } else {
+        hintBox.classList.add('hidden');
+      }
+    }
+
+    // ── Submit ────────────────────────────────────────────────────────────────
+    async function submitReport() {
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+
+      try {
+        const res = await fetch(`${API_URL}/reports`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            locationName: document.getElementById('r-name').value.trim(),
+            latitude:     parseFloat(document.getElementById('r-lat').value),
+            longitude:    parseFloat(document.getElementById('r-lng').value),
+            fecha:        document.getElementById('r-fecha').value,
+            evidencias:   photos.map(p => p.dataUrl),
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Error al enviar');
+
+        closeModal();
+        loadReports();
+        showSection('reportes');
+
+        // Actualizar stat
+        const total = document.getElementById('stat-total');
+        total.textContent = parseInt(total.textContent) + 1;
+
+      } catch (e) {
+        alert('Error: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Enviar Reporte';
+      }
+    }
+
+    // ── Load reports ──────────────────────────────────────────────────────────
+    async function loadReports() {
+      const container = document.getElementById('reports-container');
+      try {
+        const res = await fetch(`${API_URL}/reports/mine`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const reports = await res.json();
+
+        document.getElementById('stat-total').textContent = reports.length;
+
+        if (reports.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-16 text-center text-gray-400">
+              <p class="text-4xl mb-3">📋</p>
+              <p class="font-medium">No tienes reportes aún</p>
+              <p class="text-sm mt-1">Crea tu primer reporte con el botón "+ Nuevo Reporte"</p>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = `
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table class="w-full text-left">
+              <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">#</th>
+                  <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Ubicación</th>
+                  <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Coordenadas</th>
+                  <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Fecha</th>
+                  <th class="px-5 py-3 text-xs font-semibold text-gray-500 uppercase">Evidencias</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-50">
+                ${reports.map((r, i) => `
+                  <tr class="hover:bg-gray-50 transition">
+                    <td class="px-5 py-4 text-sm text-gray-400">${i + 1}</td>
+                    <td class="px-5 py-4">
+                      <p class="text-sm font-semibold text-gray-800">${r.locationName}</p>
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-500 font-mono text-xs">
+                      ${r.latitude}, ${r.longitude}
+                    </td>
+                    <td class="px-5 py-4 text-sm text-gray-500">${r.fecha}</td>
+                    <td class="px-5 py-4">
+                      <span class="badge bg-green-50 text-green-700">${r.evidencias.length} foto${r.evidencias.length !== 1 ? 's' : ''}</span>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>`;
+
+      } catch {
+        container.innerHTML = `
+          <div class="bg-white rounded-xl p-10 text-center text-red-400">
+            <p>Error al cargar reportes. Verifica que el backend esté corriendo.</p>
+          </div>`;
+      }
+    }
+  </script>
+</body>
+</html>

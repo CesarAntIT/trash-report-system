@@ -11,7 +11,7 @@ router.post(
   '/login',
   [
     body('email').isEmail().withMessage('Correo electrónico inválido'),
-    body('password').notEmpty().withMessage('La contraseña es requerida'),
+    body('password').trim().notEmpty().withMessage('La contraseña es requerida'),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -57,7 +57,7 @@ router.post(
 router.post(
   '/register',
   [
-    body('name').notEmpty().withMessage('El nombre es requerido'),
+    body('name').trim().notEmpty().withMessage('El nombre es requerido'),
     body('email').isEmail().withMessage('Correo electrónico inválido'),
     body('password')
       .isLength({ min: 6 })

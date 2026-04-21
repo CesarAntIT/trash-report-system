@@ -105,11 +105,12 @@ export default function ReportDetail() {
             {report.images.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {report.images.map((img, i) => (
-                  <img
-                    key={i}
-                    src={img}
-                    className="h-32 w-full object-cover rounded-lg"
-                  />
+                  <div key={i} className="aspect-square overflow-hidden rounded-lg">
+                    <img
+                      src={img}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 ))}
               </div>
             ) : (

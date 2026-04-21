@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema({
   address: {
     latitude: { type: Number },
     longitude: { type: Number },
+    text: { type: String, trim: true, default: '' },
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,

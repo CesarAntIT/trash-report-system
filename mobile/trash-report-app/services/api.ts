@@ -57,3 +57,46 @@ export async function cancelReport(id: string, token: string) {
   if (!response.ok) throw new Error(data.message || 'Error al cancelar');
   return data;
 }
+
+export async function getNotifications(token: string) {
+  const response = await fetch(`${API_URL}/notifications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Error al obtener notificaciones');
+  return data as { _id: string; message: string; read: boolean; createdAt: string }[];
+}
+
+export async function markNotificationRead(id: string, token: string) {
+  const response = await fetch(`${API_URL}/notifications/${id}/read`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Error al marcar notificación');
+  return data;
+}
+
+export async function getUserProfile(userId: string, token: string) {
+  const response = await fetch(`${API_URL}/users/${userId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Error al obtener perfil');
+  return data;
+}
+
+export async function updateUserProfile(
+  userId: string,
+  token: string,
+  body: { phone?: string; email?: string; address?: { text?: string; latitude?: number; longitude?: number } },
+) {
+  const response = await fetch(`${API_URL}/users/${userId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.message || 'Error al actualizar perfil');
+  return data;
+}
